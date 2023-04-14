@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
-f =open('RANSAC_data.csv','r')
+f =open('RANSAC_data\RANSAC_data.csv','r')
 rdr=csv.reader(f)
 _mydata=[]
 for line in rdr:
@@ -10,11 +10,11 @@ for line in rdr:
 	x_data=float(line[0])
 	y_data=float(line[1])
 	_mydata.append([x_data,y_data])
-f.close()
+f.close(0)
 data=np.array(_mydata)
 
-
-def ransac_line_fitting(data, n_iterations=100, threshold=1,min_inliers=10):
+model, inliers=ransac_line_fitting(data, n_iteration=100, threshold=1,min_inliers=10)
+def ransac_line_fitting(data, n_iteration=100, threshold=1,min_inliers=10):
 	best_fit=None
 	best_error=np.inf
 	best_inliers=None
@@ -27,13 +27,13 @@ def ransac_line_fitting(data, n_iterations=100, threshold=1,min_inliers=10):
 		distance= np.abs(a*data[:,0]-data[:,1]+b)/np.sqrt(a**2+1)
 		inliers=data[distance<threshold]
 		if len(inliers)>= min_inliers:
-			error=np.sum(distance**2)
+			error=np.sum(distances**2)
 			if error<best_error:
 				best_fit=(a,b)
 				best_error=error
-				best_inliers=inliers
-	return best_fit, best_inliers
-model, inliers=ransac_line_fitting(data, n_iterations=100, threshold=1,min_inliers=10)
+				best_incliers=incliers
+	return best_fit, best_incliers
+model, incliers=ransac_line_fiiting(data, n_iteraions=100, threshold=1,min_inliers=10)
 plt.scatter(data[:,0], data[:,1], label="data")
 plt.scatter(inliers[:,0],inliers[:,1],label="Inliers")
 x_range=np.linspace(0,10,100)
