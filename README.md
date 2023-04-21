@@ -6,10 +6,10 @@ Task 0: Download data files & git clone
 다음의 두 개의 bag 파일을 다운로드 받습니다. 다운로드에 시간이 걸리므로 수업을 시작하기 전에
 다운로드를 시작합니다.
 1) ros-turtle.bag
-https://drive.google.com/file/d/14gh9gflHGWWIoJHxImFg7gckDgAcDOYn/view?
+https://drive.google.com/file/d/14gh9gfIHGWWIoJHxlmFq7gckDgAcDOYn/view?
 usp=share_link
 2)대회
-nttps://drive.google.com/file/d/1qIFn2Nfw_ZUB9q3E8AZXfAZ_ 5pAatGfi/view?usp-share_link
+https://drive.google.com/file/d/1qlFn2Nfw_ZUB9q3E8AzxfAZ_5pAatGfi/view?usp-share_link
 Task 1: Install ROS
 ROS를 설치합니다. 다음 홈페이지로 이동하여 R0S1 버전명 Neotic Ninjemys를 설치합니다.
 https://www.ros.org!
