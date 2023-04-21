@@ -15,7 +15,7 @@ def talker():
     hello_str="hello world"
     for i in range (10):
         pub.publish(hello_str)
-    #rospy.loginfo(hello_str)
+    rospy.loginfo(hello_str)
 
 
 
