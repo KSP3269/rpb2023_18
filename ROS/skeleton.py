@@ -79,15 +79,11 @@ def find_tv_contour(img):
             blue_pixels = np.sum(hsv[:, :, 0] > 100)
 
             # Check if red or blue color takes up more than half of the contour pixels
-            cv2.drawContours(image, [tv_contour], -1, (0, 255, 0), 2)
             if red_pixels > len(contour_pixels) // 2:
-                print("Red")
                 return '-1'
             elif blue_pixels > len(contour_pixels) // 2:
-                print("Blue")
                 return '1'
             else:
-                print("Neither")
                 return '0'
 
     return None
