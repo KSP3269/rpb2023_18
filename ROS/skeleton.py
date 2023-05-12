@@ -82,7 +82,7 @@ def find_tv_contour(img):
             if red_pixels > len(contour_pixels) // 2:
                 return '-1'
             elif blue_pixels > len(contour_pixels) // 2:
-                return '1'
+                return '+1'
             else:
                 return '0'
 
