@@ -68,59 +68,59 @@ class DetermineColor:
         self.bridge = CvBridge()
         self.count = 0
 
-    def callback(self, data):
-        try:
-            # Listen to the image topic
-            image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
-            cv2.imshow('Image', image)
-            cv2.waitKey(1)
+	def callback(self, data):
+		try:
+			# Listen to the image topic
+			image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
+			cv2.imshow('Image', image)
+			cv2.waitKey(1)
 
-            # Retrieve the TV screen contour
-            tv_contour = find_tv_contour(image)
+			# Retrieve the TV screen contour
+			tv_contour = find_tv_contour(image)
 
-            # Prepare rotate_cmd msg
-            msg = Header()
-            msg = data.header
+			# Prepare rotate_cmd msg
+			msg = Header()
+			msg = data.header
 
-            if tv_contour is not None:
-                # Get the pixels lying on the contour
-                contour_mask = np.zeros_like(image)
-                cv2.drawContours(contour_mask, [tv_contour], -1, (255, 255, 255), thickness=1)
+			if tv_contour is not None:
+				# Get the pixels lying on the contour
+				contour_mask = np.zeros_like(image)
+				cv2.drawContours(contour_mask, [tv_contour], -1, (255, 255, 255), thickness=1)
 
-                # Extract the pixels lying on the contour
-                contour_pixels = cv2.bitwise_and(image, contour_mask)
+				# Extract the pixels lying on the contour
+				contour_pixels = cv2.bitwise_and(image, contour_mask)
 
-                # Convert the image to the HSV color space
-                hsv = cv2.cvtColor(contour_pixels, cv2.COLOR_BGR2HSV)
+				# Convert the image to the HSV color space
+				hsv = cv2.cvtColor(contour_pixels, cv2.COLOR_BGR2HSV)
 
-                # Define the lower and upper bounds for red color detection
-                lower_red1 = np.array([0, 60, 50])
-                upper_red1 = np.array([10, 255, 255])
-                lower_red2 = np.array([170, 60, 50])
-                upper_red2 = np.array([180, 255, 255])
+				# Define the lower and upper bounds for red color detection
+				lower_red1 = np.array([0, 50, 50])
+				upper_red1 = np.array([10, 255, 255])
+				lower_red2 = np.array([170, 50, 50])
+				upper_red2 = np.array([180, 255, 255])
 
-                # Create a mask for red color detection
-                mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
-                mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
-                mask_red = cv2.bitwise_or(mask_red1, mask_red2)
+				# Create a mask for red color detection
+				mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
+				mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
+				mask_red = cv2.bitwise_or(mask_red1, mask_red2)
 
-                # Calculate the number of red and blue pixels
-                red_pixels = np.sum(mask_red > 0)
-                blue_pixels = np.sum(hsv[:, :, 0] > 110)
+				# Calculate the number of red and blue pixels
+				red_pixels = np.sum(mask_red > 0)
+				blue_pixels = np.sum(hsv[:, :, 0] > 100)
 
-                # Check if red or blue color takes up more than half of the contour pixels
-                if red_pixels > len(contour_pixels) // 2:
-                    msg.frame_id = '-1'  # Red background
-                elif blue_pixels > len(contour_pixels) // 2:
-                    msg.frame_id = '+1'  # Blue background
-                else:
-                    msg.frame_id = '0'   # Neither red nor blue background
+				# Check if red or blue color takes up more than half of the contour pixels
+				if red_pixels > len(contour_pixels) // 2:
+					msg.frame_id = '-1'  # Red background
+				elif blue_pixels > len(contour_pixels) // 2:
+					msg.frame_id = '+1'  # Blue background
+				else:
+					msg.frame_id = '0'   # Neither red nor blue background
 
-            # Publish color_state
-            self.color_pub.publish(msg)
+			# Publish color_state
+			self.color_pub.publish(msg)
 
-        except CvBridgeError as e:
-            print(e)
+		except CvBridgeError as e:
+			print(e)
 
 
     def rospy_shutdown(self, signal, frame):
