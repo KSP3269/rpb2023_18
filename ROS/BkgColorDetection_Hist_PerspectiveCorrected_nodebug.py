@@ -82,30 +82,24 @@ class DetermineColor:
                 tv_height = tv_width * 9 / 16
 
                 # Define the target points for the perspective transformation
-                # Calculate the width and height of the transformed image based on the aspect ratio
-                aspect_ratio = 16 / 9
-                tv_width = int(min(tv_contour_width, tv_contour_height * aspect_ratio))
-                tv_height = int(min(tv_contour_height, tv_contour_width / aspect_ratio))
-
-                # Calculate the target points for perspective transformation
-                target_points = np.array([[0, 0], [tv_width - 1, 0], [tv_width - 1, tv_height - 1], [0, tv_height - 1]], dtype=np.float32)
+                target_points = np.array([[0, 0], [tv_height - 1, 0], [tv_height - 1, tv_width - 1], [0, tv_width - 1]], dtype=np.float32)
 
                 # Reshape the image to match the aspect ratio of the TV screen
-                transformed_image = cv2.warpPerspective(image, cv2.getPerspectiveTransform(tv_contour.astype(np.float32), target_points), (tv_width, tv_height))
+                transformed_image = cv2.warpPerspective(image, cv2.getPerspectiveTransform(tv_contour.astype(np.float32), target_points), (int(tv_height), int(tv_width)))
 
                 # Rotate the transformed image clockwise by 90 degrees to make it upright
                 transformed_image = cv2.rotate(transformed_image, cv2.ROTATE_90_CLOCKWISE)
 
                 # Show the reshaped image
-                cv2.imshow('Reshaped Image', transformed_image)
-                cv2.waitKey(1)
+                #cv2.imshow('Reshaped Image', transformed_image)
+                #cv2.waitKey(1)
 
                 # Convert the reshaped image to the HSV color space
                 hsv = cv2.cvtColor(transformed_image, cv2.COLOR_BGR2HSV)
 
                 # Define the lower and upper bounds for red color detection
                 lower_red1 = np.array([0, 50, 50])
-                upper_red1 = np.array([10, 255, 255])
+                upper_red1 = np.array([13, 255, 255])
                 lower_red2 = np.array([170, 50, 50])
                 upper_red2 = np.array([180, 255, 255])
 
@@ -131,8 +125,8 @@ class DetermineColor:
                 transformed_image_with_highlight[np.logical_and(mask_red == 0, mask_blue == 0)] = [0, 255, 0]  # Neither pixels
 
                 # Show the transformed image with highlighted pixels
-                cv2.imshow('Transformed Image with Highlight', transformed_image_with_highlight)
-                cv2.waitKey(1)
+                #cv2.imshow('Transformed Image with Highlight', transformed_image_with_highlight)
+                #cv2.waitKey(1)
 
                 # Check if red or blue color takes up more than half of the TV screen area
                 if red_pixels > (tv_width * tv_height) / 2:
@@ -141,7 +135,6 @@ class DetermineColor:
                     frame_id = '+1'  # Blue background
                 else:
                     frame_id = '0'  # Neither red nor blue background
-
 
                 # Prepare rotate_cmd msg
                 msg = Header()
