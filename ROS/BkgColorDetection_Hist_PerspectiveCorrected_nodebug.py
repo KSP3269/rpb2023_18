@@ -79,7 +79,7 @@ class DetermineColor:
 
                 # Calculate the aspect ratio of the TV screen (16:9)
                 tv_width = np.linalg.norm(tv_contour[0] - tv_contour[1])
-                tv_height = tv_width * 9 / 16
+                tv_height = tv_width * 1 / 1
 
                 # Define the target points for the perspective transformation
                 target_points = np.array([[0, 0], [tv_height - 1, 0], [tv_height - 1, tv_width - 1], [0, tv_width - 1]], dtype=np.float32)
@@ -119,10 +119,10 @@ class DetermineColor:
                 blue_pixels = np.sum(mask_blue > 0)
 
                 # Highlight the red, blue, and neither pixels in the transformed image
-                transformed_image_with_highlight = transformed_image.copy()
-                transformed_image_with_highlight[mask_red > 0] = [0, 0, 255]  # Red pixels
-                transformed_image_with_highlight[mask_blue > 0] = [255, 0, 0]  # Blue pixels
-                transformed_image_with_highlight[np.logical_and(mask_red == 0, mask_blue == 0)] = [0, 255, 0]  # Neither pixels
+                #transformed_image_with_highlight = transformed_image.copy()
+                #transformed_image_with_highlight[mask_red > 0] = [0, 0, 255]  # Red pixels
+                #transformed_image_with_highlight[mask_blue > 0] = [255, 0, 0]  # Blue pixels
+                #transformed_image_with_highlight[np.logical_and(mask_red == 0, mask_blue == 0)] = [0, 255, 0]  # Neither pixels
 
                 # Show the transformed image with highlighted pixels
                 #cv2.imshow('Transformed Image with Highlight', transformed_image_with_highlight)

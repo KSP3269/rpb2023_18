@@ -28,7 +28,7 @@ def find_tv_contour(img):
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Perform adaptive thresholding to obtain a binary image
-    threshold = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 4)
+    _, threshold = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Find contours in the binary image
     contours, hierarchy = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -44,13 +44,19 @@ def find_tv_contour(img):
 
     # If the outermost contour is found
     if tv_contour_index != -1:
-        # Approximate the contour with simpler geometry (polygon)
-        epsilon = 0.01 * cv2.arcLength(contours[tv_contour_index], True)
-        approx = cv2.approxPolyDP(contours[tv_contour_index], epsilon, True)
+        # Create a mask image for the outermost contour
+        mask = np.zeros_like(gray)
+        cv2.drawContours(mask, contours, tv_contour_index, (255), thickness=cv2.FILLED)
 
-        # Filter the approximated contour to have 4 sides
-        if len(approx) == 4:
-            tv_contour = approx
+        # Find contours again within the mask image
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Filter the contours based on area to find the TV screen contour
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area > 3000:  # Adjust this value based on the size of the TV screen in the image
+                tv_contour = contour
+                break
 
     return tv_contour
 
@@ -66,32 +72,30 @@ class DetermineColor:
         try:
             # Listen to the image topic
             image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
+            cv2.imshow('Image', image)
+            cv2.waitKey(1)
 
             # Retrieve the TV screen contour
             tv_contour = find_tv_contour(image)
 
             if tv_contour is not None:
-                # Create a copy of the image to draw the contour on
-                image_with_contour = image.copy()
+                # Calculate the aspect ratio based on the provided screen ratio
+                screen_ratio = 16 / 9
+                aspect = screen_ratio / (cv2.arcLength(tv_contour, True) / cv2.contourArea(tv_contour)) 
 
-                # Draw the contour on the image
-                cv2.drawContours(image_with_contour, [tv_contour], -1, (0, 255, 0), 2)
+                # Calculate the width of the transformed image
+                tv_width = int(min(cv2.contourArea(tv_contour), cv2.arcLength(tv_contour, True) / aspect))
 
-                # Calculate the aspect ratio of the TV screen (16:9)
-                tv_width = np.linalg.norm(tv_contour[0] - tv_contour[1])
-                tv_height = tv_width * 9 / 16
-
-                # Define the target points for the perspective transformation
-                # Calculate the width and height of the transformed image based on the aspect ratio
-                aspect_ratio = 16 / 9
-                tv_width = int(min(tv_contour_width, tv_contour_height * aspect_ratio))
-                tv_height = int(min(tv_contour_height, tv_contour_width / aspect_ratio))
+                # Calculate the height of the transformed image
+                tv_height = int(tv_width / aspect)
 
                 # Calculate the target points for perspective transformation
                 target_points = np.array([[0, 0], [tv_width - 1, 0], [tv_width - 1, tv_height - 1], [0, tv_height - 1]], dtype=np.float32)
 
                 # Reshape the image to match the aspect ratio of the TV screen
-                transformed_image = cv2.warpPerspective(image, cv2.getPerspectiveTransform(tv_contour.astype(np.float32), target_points), (tv_width, tv_height))
+                tv_contour_reshaped = tv_contour.reshape(4, 2).astype(np.float32)
+                transformed_image = cv2.warpPerspective(image, cv2.getPerspectiveTransform(tv_contour_reshaped, target_points), (tv_width, tv_height))
+
 
                 # Rotate the transformed image clockwise by 90 degrees to make it upright
                 transformed_image = cv2.rotate(transformed_image, cv2.ROTATE_90_CLOCKWISE)
@@ -105,7 +109,7 @@ class DetermineColor:
 
                 # Define the lower and upper bounds for red color detection
                 lower_red1 = np.array([0, 50, 50])
-                upper_red1 = np.array([10, 255, 255])
+                upper_red1 = np.array([13, 255, 255])
                 lower_red2 = np.array([170, 50, 50])
                 upper_red2 = np.array([180, 255, 255])
 
@@ -128,35 +132,43 @@ class DetermineColor:
                 transformed_image_with_highlight = transformed_image.copy()
                 transformed_image_with_highlight[mask_red > 0] = [0, 0, 255]  # Red pixels
                 transformed_image_with_highlight[mask_blue > 0] = [255, 0, 0]  # Blue pixels
-                transformed_image_with_highlight[np.logical_and(mask_red == 0, mask_blue == 0)] = [0, 255, 0]  # Neither pixels
+                transformed_image_with_highlight[np.logical_and(mask_red == 0, mask_blue == 0)] = [0, 255, 0] # Neither pixels
 
-                # Show the transformed image with highlighted pixels
-                cv2.imshow('Transformed Image with Highlight', transformed_image_with_highlight)
+                # Show the transformed image with pixel highlights
+                cv2.imshow('Transformed Image with Highlights', transformed_image_with_highlight)
                 cv2.waitKey(1)
 
-                # Check if red or blue color takes up more than half of the TV screen area
-                if red_pixels > (tv_width * tv_height) / 2:
-                    frame_id = '-1'  # Red background
-                elif blue_pixels > (tv_width * tv_height) / 2:
-                    frame_id = '+1'  # Blue background
+                # Determine the dominant color based on the number of red and blue pixels
+                if red_pixels > blue_pixels:
+                    color_state = '-1'  # Red background
+                elif blue_pixels > red_pixels:
+                    color_state = '+1'  # Blue background
                 else:
-                    frame_id = '0'  # Neither red nor blue background
+                    color_state = '0'  # Neither red nor blue background
 
-
-                # Prepare rotate_cmd msg
-                msg = Header()
-                msg = data.header
-                msg.frame_id = frame_id
-
-                # Publish color_state
-                self.color_pub.publish(msg)
+                # Publish the color state
+                self.color_pub.publish(color_state)
 
         except CvBridgeError as e:
             print(e)
 
-    def rospy_shutdown(self, signal, frame):
-        rospy.signal_shutdown("shut down")
-        sys.exit(0)
+
+            # Check if red or blue color takes up more than half of the TV screen area
+            if red_pixels > (tv_width * tv_height) / 2:
+                frame_id = '-1'  # Red background
+            elif blue_pixels > (tv_width * tv_height) / 2:
+                frame_id = '+1'  # Blue background
+            else:
+                frame_id = '0'  # Neither red nor blue background
+
+            # Prepare rotate_cmd msg
+            msg = Header()
+            msg.frame_id = frame_id
+
+            # Publish the rotate_cmd msg
+            self.color_pub.publish(msg)
+        except CvBridgeError as e:
+            print(e)
 if __name__ == '__main__':
     rospy.init_node('CompressedImages1', anonymous=False)
     detector = DetermineColor()
