@@ -17,12 +17,12 @@ def find_tv_contour(img):
         return tv_contour
 
     # Convert the image to grayscale
-    img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+    #img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
     # equalize the histogram of the Y channel
-    img_yuv[:, :, 0] = cv2.equalizeHist(img_yuv[:, :, 0])
+    #img_yuv[:, :, 0] = cv2.equalizeHist(img_yuv[:, :, 0])
     # convert the YUV image back to RGB format
-    image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    #image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Apply Gaussian blur to reduce noise
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
@@ -65,7 +65,8 @@ class DetermineColor:
     def callback(self, data):
         try:
             # Listen to the image topic
-            image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
+            img = self.bridge.imgmsg_to_cv2(data, 'bgr8')
+            image = cv2.resize(img, dsize=(0, 0), fx=0.1, fy=0.1, interpolation=cv2.INTER_LINEAR)
 
             # Retrieve the TV screen contour
             tv_contour = find_tv_contour(image)
@@ -74,10 +75,12 @@ class DetermineColor:
 
             if tv_contour is not None:
                 # Create a copy of the image to draw the contour on
-                image_with_contour = image.copy()
+                #image_with_contour = image.copy()
 
                 # Draw the contour on the image
-                cv2.drawContours(image_with_contour, [tv_contour], -1, (0, 255, 0), 2)
+                #cv2.drawContours(image_with_contour, [tv_contour], -1, (0, 255, 0), 2)
+                #cv2.imshow('Image with contours', image_with_contour)
+                #cv2.waitKey(1)
 
                 # Calculate the aspect ratio of the TV screen (16:9)
                 tv_width = np.linalg.norm(tv_contour[0] - tv_contour[1])
@@ -89,8 +92,6 @@ class DetermineColor:
                 # Reshape the image to match the aspect ratio of the TV screen
                 transformed_image = cv2.warpPerspective(image, cv2.getPerspectiveTransform(tv_contour.astype(np.float32), target_points), (int(tv_height), int(tv_width)))
 
-                # Rotate the transformed image clockwise by 90 degrees to make it upright
-                transformed_image = cv2.rotate(transformed_image, cv2.ROTATE_90_CLOCKWISE)
 
                 # Show the reshaped image
                 #cv2.imshow('Reshaped Image', transformed_image)
@@ -100,13 +101,13 @@ class DetermineColor:
                 hsv = cv2.cvtColor(transformed_image, cv2.COLOR_BGR2HSV)
 
                 # Define the lower and upper bounds for red color detection
-                lower_red1 = np.array([0, 50, 50])
+                lower_red1 = np.array([0, 60, 50])
                 upper_red1 = np.array([13, 255, 255])
-                lower_red2 = np.array([170, 50, 50])
+                lower_red2 = np.array([170, 60, 50])
                 upper_red2 = np.array([180, 255, 255])
 
                 # Define the lower and upper bounds for blue color detection
-                lower_blue = np.array([90, 50, 50])
+                lower_blue = np.array([90, 60, 50])
                 upper_blue = np.array([130, 255, 255])
 
                 # Create a mask for red and blue color detection
