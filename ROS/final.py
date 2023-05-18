@@ -69,6 +69,8 @@ class DetermineColor:
 
             # Retrieve the TV screen contour
             tv_contour = find_tv_contour(image)
+            msg = Header()
+            msg = data.header
 
             if tv_contour is not None:
                 # Create a copy of the image to draw the contour on
@@ -137,10 +139,8 @@ class DetermineColor:
                     frame_id = '0'  # Neither red nor blue background
 
                 # Prepare rotate_cmd msg
-                msg = Header()
-                msg = data.header
-                msg.frame_id = frame_id
 
+                msg.frame_id = frame_id
 
                 # Publish color_state
                 self.color_pub.publish(msg)
