@@ -82,9 +82,8 @@ class DetermineColor:
                 #cv2.imshow('Image with contours', image_with_contour)
                 #cv2.waitKey(1)
 
-                # Calculate the aspect ratio of the TV screen (16:9)
                 tv_width = np.linalg.norm(tv_contour[0] - tv_contour[1])
-                tv_height = tv_width * 1 / 1
+                tv_height = tv_width
 
                 # Define the target points for the perspective transformation
                 target_points = np.array([[0, 0], [tv_height - 1, 0], [tv_height - 1, tv_width - 1], [0, tv_width - 1]], dtype=np.float32)
