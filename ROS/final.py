@@ -66,7 +66,7 @@ class DetermineColor:
         try:
             # Listen to the image topic
             img = self.bridge.imgmsg_to_cv2(data, 'bgr8')
-            image = cv2.resize(img, dsize=(0, 0), fx=0.1, fy=0.1, interpolation=cv2.INTER_LINEAR)
+            image = cv2.resize(img, dsize=(0, 0), fx=0.2, fy=0.2, interpolation=cv2.INTER_LINEAR)
 
             # Retrieve the TV screen contour
             tv_contour = find_tv_contour(image)
